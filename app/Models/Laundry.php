@@ -21,4 +21,19 @@ class Laundry extends Model
     {
         return 'slug';
     }
+
+    public function getTenantKeyName(): string
+    {
+        return 'id';
+    }
+
+    public function getTenantKey(): mixed
+    {
+        return $this->getKey();
+    }
+
+    public function getTenantName(): string
+    {
+        return $this->nama;
+    }
 }

@@ -25,6 +25,7 @@ class AdminPanelProvider extends PanelProvider
     public function panel(Panel $panel): Panel
     {
         return $panel
+            ->default('admin')
             ->id('admin')
             ->path('admin')
             ->login()
@@ -56,6 +57,12 @@ class AdminPanelProvider extends PanelProvider
                 Authenticate::class,
             ])
             ->tenant(Laundry::class)
-            ->tenantRegistration(RegisterLaundry::class);
+            ->tenantRegistration(RegisterLaundry::class)
+            ->tenantMiddleware([
+                \BezhanSalleh\FilamentShield\Middleware\SyncShieldTenant::class,
+            ], isPersistent: true)
+            ->plugins([
+                \BezhanSalleh\FilamentShield\FilamentShieldPlugin::make(),
+            ]);
     }
 }
