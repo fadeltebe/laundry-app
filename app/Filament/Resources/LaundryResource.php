@@ -1,9 +1,9 @@
 <?php
 
-namespace App\Filament\Admin\Resources;
+namespace App\Filament\Resources;
 
-use App\Filament\Admin\Resources\LaundryResource\Pages;
-use App\Filament\Admin\Resources\LaundryResource\RelationManagers;
+use App\Filament\Resources\LaundryResource\Pages;
+use App\Filament\Resources\LaundryResource\RelationManagers;
 use App\Models\Laundry;
 use Filament\Forms;
 use Filament\Forms\Form;

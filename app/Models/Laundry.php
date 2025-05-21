@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Laundry extends Model
 {
@@ -35,5 +36,14 @@ class Laundry extends Model
     public function getTenantName(): string
     {
         return $this->nama;
+    }
+
+    public function roles(): HasMany
+    {
+        return $this->hasMany(Role::class);
+    }
+    public function permissions(): HasMany
+    {
+        return $this->hasMany(Permission::class);
     }
 }

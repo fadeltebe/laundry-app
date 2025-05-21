@@ -58,11 +58,6 @@ class AdminPanelProvider extends PanelProvider
             ])
             ->tenant(Laundry::class)
             ->tenantRegistration(RegisterLaundry::class)
-            ->tenantMiddleware([
-                \BezhanSalleh\FilamentShield\Middleware\SyncShieldTenant::class,
-            ], isPersistent: true)
-            ->plugins([
-                \BezhanSalleh\FilamentShield\FilamentShieldPlugin::make(),
-            ]);
+        ;
     }
 }
