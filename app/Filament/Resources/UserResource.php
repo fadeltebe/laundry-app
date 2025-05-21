@@ -37,16 +37,24 @@ class UserResource extends Resource
                     ->required()
                     ->maxLength(255),
 
-                Forms\Components\TextInput::make('password')
+                TextInput::make('password')
+                    ->label('Password')
                     ->password()
-                    ->required()
+                    ->dehydrated(fn($state) => filled($state)) // hanya simpan jika diisi
+                    ->required(fn(string $context): bool => $context === 'create') // hanya required saat create
+                    ->minLength(8)
                     ->maxLength(255),
 
-                Forms\Components\Select::make('laundry_id')
+                Forms\Components\Select::make('laundries')
                     ->label('Laundry')
-                    ->required()
-                    ->options(Laundry::all()->pluck('name', 'id'))
-                    ->searchable(),
+                    ->relationship('laundries', 'name') // ini akan isi laundry_user table
+                    ->searchable()
+                    ->preload()
+                    ->required(),
+                Forms\Components\Select::make('roles')
+                    ->relationship('roles', 'name')
+                    ->multiple()
+                    ->preload(),
             ]);
     }
 
@@ -56,6 +64,7 @@ class UserResource extends Resource
             ->columns([
                 Tables\Columns\TextColumn::make('name')->searchable(),
                 Tables\Columns\TextColumn::make('laundries.name')->searchable(),
+                Tables\Columns\TextColumn::make('roles.name')->searchable(),
                 Tables\Columns\TextColumn::make('email')->searchable(),
                 Tables\Columns\TextColumn::make('created_at')->dateTime(),
             ])

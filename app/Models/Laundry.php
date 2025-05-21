@@ -2,9 +2,10 @@
 
 namespace App\Models;
 
+use App\Models\Service;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class Laundry extends Model
 {
@@ -45,5 +46,10 @@ class Laundry extends Model
     public function permissions(): HasMany
     {
         return $this->hasMany(Permission::class);
+    }
+
+    public function services()
+    {
+        return $this->hasMany(Service::class);
     }
 }
