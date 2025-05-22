@@ -52,4 +52,14 @@ class Laundry extends Model
     {
         return $this->hasMany(Service::class);
     }
+
+    public function branches(): HasMany
+    {
+        return $this->hasMany(Branch::class);
+    }
+
+    public function transactions(): HasMany
+    {
+        return $this->hasMany(Transaction::class);
+    }
 }
