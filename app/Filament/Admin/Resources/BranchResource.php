@@ -26,6 +26,8 @@ class BranchResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
 
+    protected static ?string $navigationLabel = 'Cabang';
+
     public static function form(Form $form): Form
     {
         return $form->schema([

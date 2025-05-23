@@ -21,6 +21,8 @@ class TransactionResource extends Resource
 
     protected static ?string $tenantOwnershipRelationshipName = 'laundry';
 
+    protected static ?string $navigationLabel = 'Transaksi';
+
 
     public static function form(Form $form): Form
     {
@@ -62,25 +64,41 @@ class TransactionResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('branch.name')
-                    ->numeric()
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('description')
-                    ->searchable(),
-                Tables\Columns\TextColumn::make('amount')
-                    ->numeric()
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('created_at')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
-                Tables\Columns\TextColumn::make('updated_at')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
+                Tables\Columns\TextColumn::make('branch.name')->sortable(),
+                Tables\Columns\TextColumn::make('description')->searchable(),
+                Tables\Columns\TextColumn::make('amount')->numeric()->sortable(),
+                Tables\Columns\TextColumn::make('created_at')->dateTime()->sortable(),
             ])
             ->filters([
-                //
+                // Filter berdasarkan Cabang
+                Tables\Filters\SelectFilter::make('branch_id')
+                    ->label('Filter Cabang')
+                    ->options(function () {
+                        $user = auth()->user();
+
+                        if ($user->hasRole('Owner')) {
+                            return \App\Models\Branch::whereIn('laundry_id', $user->laundries->pluck('id'))
+                                ->pluck('name', 'id');
+                        }
+
+                        return \App\Models\Branch::pluck('name', 'id');
+                    })
+                    ->searchable()
+                    ->visible(fn() => !auth()->user()->hasRole('Admin')) // Admin tidak perlu melihat dropdown karena hidden
+                    ->preload(),
+
+                // Filter berdasarkan Tanggal
+                Tables\Filters\Filter::make('transaction_date')
+                    ->form([
+                        Forms\Components\DatePicker::make('from')->label('Dari Tanggal'),
+                        Forms\Components\DatePicker::make('until')->label('Sampai Tanggal'),
+                    ])
+                    ->query(function (Builder $query, array $data): Builder {
+                        return $query
+                            ->when($data['from'], fn($q) => $q->whereDate('created_at', '>=', $data['from']))
+                            ->when($data['until'], fn($q) => $q->whereDate('created_at', '<=', $data['until']));
+                    })
+                    ->label('Tanggal Transaksi'),
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
