@@ -62,6 +62,8 @@ class AdminPanelProvider extends PanelProvider
             ])
             ->tenant(Laundry::class)
             ->tenantRegistration(RegisterLaundry::class)
-        ;
+            ->plugins([
+                FilamentShieldPlugin::make(),
+            ]);
     }
 }
