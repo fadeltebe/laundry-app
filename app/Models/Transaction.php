@@ -7,7 +7,32 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Transaction extends Model
 {
-    protected $fillable = ['laundry_id', 'branch_id', 'description', 'amount'];
+    protected $fillable = [
+        'laundry_id',
+        'branch_id',
+        'customer_id',
+        'description',
+        'received_at',
+        'completed_at',
+        'status',
+        'amount',
+        'payment_method',
+        'paid_at',
+        'payment_status',
+    ];
+    protected $casts = [
+        'received_at' => 'datetime',
+        'completed_at' => 'datetime',
+        'paid_at' => 'datetime',
+    ];
+    protected $attributes = [
+        'status' => 'Diterima',
+        'payment_status' => 'Belum Lunas',
+    ];
+    public function customer(): BelongsTo
+    {
+        return $this->belongsTo(Customer::class);
+    }
 
     public function branch(): BelongsTo
     {

@@ -19,44 +19,29 @@ class TransactionResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
 
-    protected static ?string $tenantOwnershipRelationshipName = 'laundry';
-
-    protected static ?string $navigationLabel = 'Transaksi';
-
-
     public static function form(Form $form): Form
     {
-        $user = auth()->user();
-
-        $isAdmin = $user->hasRole('Admin');
-        $branchId = $isAdmin ? $user->branches()->first()?->id : null;
-
         return $form
             ->schema([
+
                 Forms\Components\Select::make('branch_id')
-                    ->label('Cabang')
-                    ->options(function () {
-                        $user = auth()->user();
-
-                        // Jika owner, hanya tampilkan cabang dari laundry yang dia miliki
-                        if ($user->hasRole('Owner')) {
-                            return \App\Models\Branch::whereIn('laundry_id', $user->laundries->pluck('id'))
-                                ->pluck('name', 'id');
-                        }
-
-                        // Jika superadmin atau lainnya, tampilkan semua cabang
-                        return \App\Models\Branch::pluck('name', 'id');
-                    })
-                    ->required()
-                    ->searchable()
-                    ->preload()
-                    ->visible(fn() => !auth()->user()->hasRole('Admin')), // Admin tidak perlu melihat dropdown karena hidden
+                    ->relationship('branch', 'name'),
+                Forms\Components\Select::make('customer_id')
+                    ->relationship('customer', 'name'),
                 Forms\Components\TextInput::make('description')
-                    ->required()
                     ->maxLength(255),
+                Forms\Components\DateTimePicker::make('received_at'),
+                Forms\Components\DateTimePicker::make('completed_at'),
+                Forms\Components\TextInput::make('status')
+                    ->required(),
                 Forms\Components\TextInput::make('amount')
                     ->required()
                     ->numeric(),
+                Forms\Components\TextInput::make('payment_method')
+                    ->maxLength(255),
+                Forms\Components\DateTimePicker::make('paid_at'),
+                Forms\Components\TextInput::make('payment_status')
+                    ->required(),
             ]);
     }
 
@@ -64,41 +49,44 @@ class TransactionResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('branch.name')->sortable(),
-                Tables\Columns\TextColumn::make('description')->searchable(),
-                Tables\Columns\TextColumn::make('amount')->numeric()->sortable(),
-                Tables\Columns\TextColumn::make('created_at')->dateTime()->sortable(),
+                Tables\Columns\TextColumn::make('laundry.name')
+                    ->numeric()
+                    ->sortable(),
+                Tables\Columns\TextColumn::make('branch.name')
+                    ->numeric()
+                    ->sortable(),
+                Tables\Columns\TextColumn::make('customer.name')
+                    ->numeric()
+                    ->sortable(),
+                Tables\Columns\TextColumn::make('description')
+                    ->searchable(),
+                Tables\Columns\TextColumn::make('received_at')
+                    ->dateTime()
+                    ->sortable(),
+                Tables\Columns\TextColumn::make('completed_at')
+                    ->dateTime()
+                    ->sortable(),
+                Tables\Columns\TextColumn::make('status'),
+                Tables\Columns\TextColumn::make('amount')
+                    ->numeric()
+                    ->sortable(),
+                Tables\Columns\TextColumn::make('payment_method')
+                    ->searchable(),
+                Tables\Columns\TextColumn::make('paid_at')
+                    ->dateTime()
+                    ->sortable(),
+                Tables\Columns\TextColumn::make('payment_status'),
+                Tables\Columns\TextColumn::make('created_at')
+                    ->dateTime()
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
+                Tables\Columns\TextColumn::make('updated_at')
+                    ->dateTime()
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                // Filter berdasarkan Cabang
-                Tables\Filters\SelectFilter::make('branch_id')
-                    ->label('Filter Cabang')
-                    ->options(function () {
-                        $user = auth()->user();
-
-                        if ($user->hasRole('Owner')) {
-                            return \App\Models\Branch::whereIn('laundry_id', $user->laundries->pluck('id'))
-                                ->pluck('name', 'id');
-                        }
-
-                        return \App\Models\Branch::pluck('name', 'id');
-                    })
-                    ->searchable()
-                    ->visible(fn() => !auth()->user()->hasRole('Admin')) // Admin tidak perlu melihat dropdown karena hidden
-                    ->preload(),
-
-                // Filter berdasarkan Tanggal
-                Tables\Filters\Filter::make('transaction_date')
-                    ->form([
-                        Forms\Components\DatePicker::make('from')->label('Dari Tanggal'),
-                        Forms\Components\DatePicker::make('until')->label('Sampai Tanggal'),
-                    ])
-                    ->query(function (Builder $query, array $data): Builder {
-                        return $query
-                            ->when($data['from'], fn($q) => $q->whereDate('created_at', '>=', $data['from']))
-                            ->when($data['until'], fn($q) => $q->whereDate('created_at', '<=', $data['until']));
-                    })
-                    ->label('Tanggal Transaksi'),
+                //
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),

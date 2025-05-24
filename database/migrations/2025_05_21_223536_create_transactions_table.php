@@ -13,20 +13,37 @@ return new class extends Migration
     {
         Schema::create('transactions', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('branch_id')->nullable()->constrained()->nullOnDelete();
             $table->foreignId('laundry_id')->constrained()->onDelete('cascade');
-            $table->string('description');
-            $table->integer('amount');
+            $table->foreignId('branch_id')->nullable()->constrained()->nullOnDelete();
+            $table->foreignId('customer_id')->nullable()->constrained()->nullOnDelete(); // relasi ke customer
+            $table->string('description')->nullable(); // catatan tambahan
+
+            $table->dateTime('received_at')->nullable(); // kapan diterima
+            $table->dateTime('completed_at')->nullable(); // kapan selesai
+            $table->enum('status', ['Diterima', 'Diproses', 'Selesai', 'Diambil'])->default('Diterima');
+
+            $table->integer('amount'); // total tagihan
+            $table->string('payment_method')->nullable(); // contoh: 'Tunai', 'Transfer', 'QRIS'
+            $table->dateTime('paid_at')->nullable(); // kapan dibayar
+            $table->enum('payment_status', ['Belum Lunas', 'Lunas'])->default('Belum Lunas');
+
             $table->timestamps();
         });
     }
 
-
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
-        Schema::dropIfExists('transactions');
+        Schema::table('transactions', function (Blueprint $table) {
+            $table->dropForeign(['customer_id']);
+            $table->dropColumn([
+                'customer_id',
+                'received_at',
+                'completed_at',
+                'status',
+                'payment_method',
+                'paid_at',
+                'payment_status',
+            ]);
+        });
     }
 };

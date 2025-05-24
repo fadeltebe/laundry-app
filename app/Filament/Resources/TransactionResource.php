@@ -23,17 +23,27 @@ class TransactionResource extends Resource
     {
         return $form
             ->schema([
-                Forms\Components\Select::make('branch_id')
-                    ->relationship('branch', 'name'),
                 Forms\Components\Select::make('laundry_id')
                     ->relationship('laundry', 'name')
                     ->required(),
+                Forms\Components\Select::make('branch_id')
+                    ->relationship('branch', 'name'),
+                Forms\Components\Select::make('customer_id')
+                    ->relationship('customer', 'name'),
                 Forms\Components\TextInput::make('description')
-                    ->required()
                     ->maxLength(255),
+                Forms\Components\DateTimePicker::make('received_at'),
+                Forms\Components\DateTimePicker::make('completed_at'),
+                Forms\Components\TextInput::make('status')
+                    ->required(),
                 Forms\Components\TextInput::make('amount')
                     ->required()
                     ->numeric(),
+                Forms\Components\TextInput::make('payment_method')
+                    ->maxLength(255),
+                Forms\Components\DateTimePicker::make('paid_at'),
+                Forms\Components\TextInput::make('payment_status')
+                    ->required(),
             ]);
     }
 
@@ -41,17 +51,33 @@ class TransactionResource extends Resource
     {
         return $table
             ->columns([
+                Tables\Columns\TextColumn::make('laundry.name')
+                    ->numeric()
+                    ->sortable(),
                 Tables\Columns\TextColumn::make('branch.name')
                     ->numeric()
                     ->sortable(),
-                Tables\Columns\TextColumn::make('laundry.name')
+                Tables\Columns\TextColumn::make('customer.name')
                     ->numeric()
                     ->sortable(),
                 Tables\Columns\TextColumn::make('description')
                     ->searchable(),
+                Tables\Columns\TextColumn::make('received_at')
+                    ->dateTime()
+                    ->sortable(),
+                Tables\Columns\TextColumn::make('completed_at')
+                    ->dateTime()
+                    ->sortable(),
+                Tables\Columns\TextColumn::make('status'),
                 Tables\Columns\TextColumn::make('amount')
                     ->numeric()
                     ->sortable(),
+                Tables\Columns\TextColumn::make('payment_method')
+                    ->searchable(),
+                Tables\Columns\TextColumn::make('paid_at')
+                    ->dateTime()
+                    ->sortable(),
+                Tables\Columns\TextColumn::make('payment_status'),
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()
