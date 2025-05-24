@@ -20,23 +20,16 @@ class StatsOverview extends BaseWidget
     protected function getStats(): array
     {
         $query = Transaction::query();
-
         $user = auth()->user();
-        $isAdmin = $user->hasRole('Admin');
-        $isOwner = $user->hasRole('Owner');
-        $isSuperAdmin = $user->hasRole('Super Admin');
+
+        // 🔒 Filter cabang jika user adalah admin
+        if (is_admin()) {
+            $query->where('branch_id', $user->branches()->first()?->id);
+        }
+
+        // 📅 Filter tanggal
         $startDate = $this->filters['start_date'] ?? null;
         $endDate = $this->filters['end_date'] ?? null;
-
-        if ($isAdmin) {
-            $query->where('branch_id', $user->branches()->first()?->id);
-        } else {
-        }
-        // Filter berdasarkan cabang
-        if ($cabangId = $this->filters['branch_id'] ?? null) {
-            $query->where('branch_id', $cabangId);
-        }
-
 
         if ($startDate && $endDate) {
             $query->whereBetween('created_at', [
@@ -47,6 +40,11 @@ class StatsOverview extends BaseWidget
             $query->where('created_at', '>=', Carbon::parse($startDate)->startOfDay());
         } elseif ($endDate) {
             $query->where('created_at', '<=', Carbon::parse($endDate)->endOfDay());
+        }
+
+        // 🏢 Filter berdasarkan cabang dari filter halaman
+        if ($branchId = $this->filters['branch_id'] ?? null) {
+            $query->where('branch_id', $branchId);
         }
 
         return [
@@ -60,8 +58,10 @@ class StatsOverview extends BaseWidget
                 ->color('success'),
 
             Stat::make('Total Bulan Ini', number_format(
-                (clone $query)->whereMonth('created_at', now()->month)
-                    ->whereYear('created_at', now()->year)->sum('amount'),
+                (clone $query)
+                    ->whereMonth('created_at', now()->month)
+                    ->whereYear('created_at', now()->year)
+                    ->sum('amount'),
                 0,
                 ',',
                 '.'
@@ -80,7 +80,6 @@ class StatsOverview extends BaseWidget
         ];
     }
 
-    // 👇 Ini WAJIB untuk menampilkan form filter di atas widget
     protected function hasFiltersForm(): bool
     {
         return true;
@@ -89,12 +88,11 @@ class StatsOverview extends BaseWidget
     protected function getFilters(): array
     {
         return [
-            DatePicker::make('tanggal')
-                ->label('Tanggal Transaksi'),
-
+            DatePicker::make('start_date')->label('Tanggal Mulai'),
+            DatePicker::make('end_date')->label('Tanggal Akhir'),
             Select::make('branch_id')
                 ->label('Cabang')
-                ->options(Branch::pluck('nama', 'id'))
+                ->options(Branch::pluck('name', 'id'))
                 ->searchable()
                 ->placeholder('Semua Cabang'),
         ];
