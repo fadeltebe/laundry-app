@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Transaction extends Model
 {
@@ -42,5 +43,10 @@ class Transaction extends Model
     public function laundry(): BelongsTo
     {
         return $this->belongsTo(Laundry::class);
+    }
+
+    public function transactionServices(): HasMany
+    {
+        return $this->hasMany(TransactionService::class);
     }
 }

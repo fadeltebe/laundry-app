@@ -20,6 +20,7 @@ class StatsOverview extends BaseWidget
     {
         $query = Transaction::query();
         $user = auth()->user();
+        $query->where('laundry_id', $user->laundry_id);
 
         // 🔒 Filter cabang jika user adalah admin
         if (is_admin()) {

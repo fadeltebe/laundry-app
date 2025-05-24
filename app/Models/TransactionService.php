@@ -3,12 +3,14 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class TransactionService extends Model
 {
 
     protected $fillable = [
-        'laundry_id',
+        // 'laundry_id',
         'transaction_id',
         'service_id',
         'add_ons_id',
@@ -17,18 +19,18 @@ class TransactionService extends Model
         'subtotal',
     ];
 
-    public function transaction()
+    public function transaction(): BelongsTo
     {
         return $this->belongsTo(Transaction::class);
     }
 
-    public function service()
+    public function service(): BelongsTo
     {
         return $this->belongsTo(Service::class);
     }
 
-    public function addOn()
+    public function addOns(): HasMany
     {
-        return $this->belongsTo(AddOn::class, 'add_ons_id');
+        return $this->hasMany(AddOn::class);
     }
 }
