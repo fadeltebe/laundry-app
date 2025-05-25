@@ -12,6 +12,7 @@ use Filament\Forms\Form;
 use Filament\Tables\Table;
 use App\Models\Transaction;
 use PhpParser\Node\Stmt\Label;
+use Filament\Tables\Actions\Action;
 use Filament\Resources\Resource;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Repeater;
@@ -23,6 +24,7 @@ use Illuminate\Database\Eloquent\SoftDeletingScope;
 use App\Filament\Admin\Resources\TransactionResource\Pages;
 use Icetalker\FilamentTableRepeater\Forms\Components\TableRepeater;
 use App\Filament\Admin\Resources\TransactionResource\RelationManagers;
+use Filament\Tables\Enums\ActionsPosition;
 
 class TransactionResource extends Resource
 {
@@ -229,12 +231,12 @@ class TransactionResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('laundry.name')
-                    ->numeric()
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('branch.name')
-                    ->numeric()
-                    ->sortable(),
+                // Tables\Columns\TextColumn::make('laundry.name')
+                //     ->numeric()
+                //     ->sortable(),
+                // Tables\Columns\TextColumn::make('branch.name')
+                //     ->numeric()
+                //     ->sortable(),
                 Tables\Columns\TextColumn::make('customer.name')
                     ->numeric()
                     ->sortable(),
@@ -268,9 +270,18 @@ class TransactionResource extends Resource
             ->filters([
                 //
             ])
-            ->actions([
-                Tables\Actions\EditAction::make(),
-            ])
+            ->actions(
+                [
+                    Tables\Actions\EditAction::make(),
+                    Action::make('kirimWhatsApp')
+                        ->label('Kirim WA')
+                        ->url(fn($record) => route('transaksi.kirim-wa', $record))
+                        ->icon('heroicon-o-chat-bubble-oval-left-ellipsis')
+                        ->color('success')
+                        ->openUrlInNewTab()
+                ],
+                position: ActionsPosition::BeforeColumns
+            )
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),

@@ -2,6 +2,7 @@
 
 namespace App\Providers\Filament;
 
+use App\Filament\Pages\Tenancy\EditLaundryProfile;
 use Filament\Pages;
 use Filament\Panel;
 use Filament\Widgets;
@@ -60,6 +61,7 @@ class AdminPanelProvider extends PanelProvider
             ])
             ->tenant(Laundry::class)
             ->tenantRegistration(RegisterLaundry::class)
+            ->tenantProfile(EditLaundryProfile::class)
             ->plugins([
                 FilamentShieldPlugin::make(),
             ]);

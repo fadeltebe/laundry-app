@@ -12,6 +12,12 @@ class Laundry extends Model
     protected $fillable = [
         'name',
         'slug',
+        'nama_owner',
+        'kontak_owner',
+        'logo',
+        'slogan',
+        'alamat',
+        'kontak',
     ];
 
     public function members(): BelongsToMany

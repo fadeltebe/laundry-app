@@ -10,7 +10,7 @@ class EditLaundryProfile extends EditTenantProfile
 {
     public static function getLabel(): string
     {
-        return 'Laundry Profil';
+        return 'Profil Laundry';
     }
 
     public function form(Form $form): Form
@@ -18,6 +18,12 @@ class EditLaundryProfile extends EditTenantProfile
         return $form
             ->schema([
                 TextInput::make('name'),
+                TextInput::make('nama_owner'),
+                TextInput::make('kontak_owner'),
+                TextInput::make('logo'),
+                TextInput::make('slogan'),
+                TextInput::make('alamat'),
+                TextInput::make('kontak'),
                 // ...
             ]);
     }
