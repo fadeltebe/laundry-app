@@ -14,5 +14,5 @@ function is_owner(): bool
 
 function is_superadmin(): bool
 {
-    return Auth::check() && Auth::user()->hasRole('Super Admin');
+    return Auth::check() && Auth::user()->hasRole('super_admin');
 }

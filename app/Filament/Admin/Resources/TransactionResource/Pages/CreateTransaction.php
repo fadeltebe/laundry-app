@@ -18,4 +18,11 @@ class CreateTransaction extends CreateRecord
 
         return $data;
     }
+
+    protected function getRedirectUrl(): string
+    {
+        $recordId = $this->record->id;
+
+        return route('transaksi.print', ['id' => $recordId]);
+    }
 }

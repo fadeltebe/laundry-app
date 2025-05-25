@@ -1,7 +1,10 @@
 <?php
 
+use App\Http\Controllers\TransaksiController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
-    return view('welcome');
+    return redirect()->route('filament.admin.auth.login');
 });
+
+Route::get('/transaksi/{id}/print', [TransaksiController::class, 'print'])->name('transaksi.print');

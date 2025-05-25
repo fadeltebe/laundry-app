@@ -12,6 +12,7 @@ class Transaction extends Model
         'laundry_id',
         'branch_id',
         'customer_id',
+        'kode',
         'description',
         'received_at',
         'completed_at',

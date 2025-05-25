@@ -20,7 +20,9 @@ class StatsOverview extends BaseWidget
     {
         $query = Transaction::query();
         $user = auth()->user();
-        $query->where('laundry_id', $user->laundry_id);
+        $query->where('laundry_id', $user->laundries->first()?->id);
+
+
 
         // 🔒 Filter cabang jika user adalah admin
         if (is_admin()) {
@@ -54,7 +56,7 @@ class StatsOverview extends BaseWidget
                 ',',
                 '.'
             ))
-                ->description('Jumlah transaksi hari ini')
+                ->description('Jumlah transaksi hari ini: ' . (clone $query)->whereDate('created_at', now())->count())
                 ->color('success'),
 
             Stat::make('Total Bulan Ini', number_format(
@@ -66,7 +68,12 @@ class StatsOverview extends BaseWidget
                 ',',
                 '.'
             ))
-                ->description('Jumlah transaksi bulan ini')
+                ->description(
+                    'Jumlah transaksi bulan ini: ' . (clone $query)
+                        ->whereMonth('created_at', now()->month)
+                        ->whereYear('created_at', now()->year)
+                        ->count()
+                )
                 ->color('info'),
 
             Stat::make('Total Keseluruhan', number_format(
@@ -75,7 +82,7 @@ class StatsOverview extends BaseWidget
                 ',',
                 '.'
             ))
-                ->description('Jumlah seluruh transaksi')
+                ->description('Jumlah seluruh transaksi: ' . (clone $query)->count())
                 ->color('primary'),
         ];
     }

@@ -4,15 +4,21 @@ namespace App\Filament\Admin\Resources;
 
 use Filament\Forms;
 use Filament\Tables;
+use App\Models\AddOn;
+use App\Models\Branch;
+use App\Models\Service;
+use App\Models\Customer;
 use Filament\Forms\Form;
 use Filament\Tables\Table;
 use App\Models\Transaction;
+use PhpParser\Node\Stmt\Label;
 use Filament\Resources\Resource;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\TextInput;
 use Illuminate\Database\Eloquent\Builder;
 use Filament\Forms\Components\ToggleButtons;
+use Filament\Forms\Components\DateTimePicker;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use App\Filament\Admin\Resources\TransactionResource\Pages;
 use Icetalker\FilamentTableRepeater\Forms\Components\TableRepeater;
@@ -24,33 +30,69 @@ class TransactionResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
 
+    protected static ?string $navigationLabel = 'Transaksi';
+
+
     public static function form(Form $form): Form
     {
         $user = auth()->user();
         $branchId = is_admin() ? $user->branches()->first()?->id : null;
 
         return $form->schema([
+
+            Forms\Components\TextInput::make('kode')
+                ->label('Kode')
+                ->disabled()
+                ->dehydrated() // Supaya tetap disimpan ke database
+                ->required()
+                ->default(fn(callable $get) => self::generateKode($get('tanggal_masuk') ?? now())),
+
             Forms\Components\Select::make('branch_id')
                 ->label('Cabang')
                 ->options(function () use ($user) {
                     if ($user->hasRole('Owner')) {
-                        return \App\Models\Branch::whereIn('laundry_id', $user->laundries->pluck('id'))
+                        return Branch::whereIn('laundry_id', $user->laundries->pluck('id'))
                             ->pluck('name', 'id');
                     }
 
-                    return \App\Models\Branch::pluck('name', 'id');
+                    return Branch::pluck('name', 'id');
                 })
                 ->required()
-                ->searchable()
                 ->preload()
                 ->default($branchId) // ✅ Diisi otomatis
                 ->hidden(fn() => is_admin()), // ✅ Dikirim walaupun disembunyikan
             Forms\Components\Select::make('customer_id')
-                ->relationship('customer', 'name'),
+                ->label('Pelanggan')
+                ->options(function () use ($user) {
+                    return Customer::whereIn('laundry_id', $user->laundries->pluck('id'))
+                        ->pluck('name', 'id');
+                })
+                ->searchable()
+                ->preload()
+                ->required()
+                ->createOptionForm([
+                    Forms\Components\TextInput::make('name')->required(),
+                    Forms\Components\TextInput::make('phone')->required(),
+                    Forms\Components\TextInput::make('adress'),
+                ])
+                ->createOptionAction(
+                    fn(\Filament\Forms\Components\Actions\Action $action) =>
+                    $action->mutateFormDataUsing(function (array $data) {
+                        $data['laundry_id'] = auth()->user()->laundries()->first()?->id;
+                        return $data;
+                    })
+                ),
             Forms\Components\TextInput::make('description')
+                ->label('Catatan')
                 ->maxLength(255),
-            Forms\Components\DateTimePicker::make('received_at'),
-            Forms\Components\DateTimePicker::make('completed_at'),
+            Forms\Components\DateTimePicker::make('received_at')
+                ->default(now())
+                ->label('Tanggal Diterima')
+                ->required(),
+            Forms\Components\DateTimePicker::make('completed_at')
+                ->default(now())
+                ->label('Tanggal Selesai')
+                ->required(fn(callable $get) => $get('status') === 'Selesai'),
             ToggleButtons::make('status')
                 ->options([
                     'Diterima' => 'Diterima',
@@ -77,7 +119,15 @@ class TransactionResource extends Resource
                     'QRIS' => 'QRIS',
                 ])
                 ->required(fn(callable $get) => $get('status_bayar') === true),
-            Forms\Components\DateTimePicker::make('paid_at'),
+            DateTimePicker::make('paid_at')
+                ->reactive()
+                ->afterStateUpdated(function ($state, callable $set) {
+                    if ($state) {
+                        $set('payment_status', 'Lunas');
+                    } else {
+                        $set('payment_status', 'Belum Lunas');
+                    }
+                }),
             ToggleButtons::make('payment_status')
                 ->options([
                     'Lunas' => 'Lunas',
@@ -86,10 +136,11 @@ class TransactionResource extends Resource
                 ->colors([
                     'Lunas' => 'success',
                     'Belum Lunas' => 'danger',
-                ])->inline()
+                ])
+                ->inline()
+                ->disabled() // Agar tidak bisa diubah manual
                 ->default('Belum Lunas')
                 ->required()
-                ->grouped()
                 ->reactive(),
             TableRepeater::make('transactionServices')
                 ->label('Layanan Transaksi')
@@ -97,7 +148,10 @@ class TransactionResource extends Resource
                 ->schema([
                     Select::make('service_id')
                         ->label('Layanan')
-                        ->relationship('service', 'nama_layanan')
+                        ->options(function () use ($user) {
+                            return Service::whereIn('laundry_id', $user->laundries->pluck('id'))
+                                ->pluck('nama_layanan', 'id');
+                        })
                         ->getOptionLabelFromRecordUsing(fn($record) => $record->nama_layanan . ' - Rp. ' . number_format($record->harga, 0, ',', '.') . '/' . $record->satuan)
                         ->required()
                         ->reactive()
@@ -117,9 +171,11 @@ class TransactionResource extends Resource
 
                     Select::make('add_ons_id')
                         ->label('Add-ons')
-                        ->relationship('addOns', 'name')
-                        ->nullable(),
-
+                        ->options(function () use ($user) {
+                            return AddOn::whereIn('laundry_id', $user->laundries->pluck('id'))
+                                ->pluck('name', 'id');
+                        })
+                        ->required(),
                     TextInput::make('price')
                         ->label('Harga per Kg')
                         ->numeric()
@@ -250,5 +306,22 @@ class TransactionResource extends Resource
 
         // Superadmin atau lainnya bisa lihat semua
         return parent::getEloquentQuery();
+    }
+
+    private static function generateKode($tanggal)
+    {
+        $tanggal = \Carbon\Carbon::parse($tanggal);
+        $prefix = '25' . $tanggal->format('md');
+
+        $latestKode = \App\Models\Transaction::whereDate('received_at', $tanggal->toDateString())
+            ->latest('id')
+            ->value('kode');
+
+        $lastIncrement = 0;
+        if ($latestKode && substr($latestKode, 0, 6) === $prefix) {
+            $lastIncrement = (int) substr($latestKode, 6);
+        }
+
+        return $prefix . str_pad($lastIncrement + 1, 3, '0', STR_PAD_LEFT);
     }
 }

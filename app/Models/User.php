@@ -70,13 +70,20 @@ class User extends Authenticatable implements FilamentUser, HasTenants
         return $this->laundries()->whereKey($tenant)->exists();
     }
 
-    public function canAccessPanel(Panel $panel): bool
-    {
-        return true;
-    }
-
     public function branches(): HasMany
     {
         return $this->hasMany(Branch::class);
+    }
+
+
+
+    public function canAccessPanel(Panel $panel): bool
+    {
+        if ($panel->getId() === 'superadmin') {
+            return is_superadmin();
+        } elseif ($panel->getId() === 'admin') {
+            return true; // Admin atau Owner bisa akses panel admin
+        }
+        return true;
     }
 }

@@ -16,6 +16,8 @@ return new class extends Migration
             $table->foreignId('laundry_id')->constrained()->onDelete('cascade');
             $table->foreignId('branch_id')->nullable()->constrained()->nullOnDelete();
             $table->foreignId('customer_id')->nullable()->constrained()->nullOnDelete(); // relasi ke customer
+            $table->string('kode')->unique();
+
             $table->string('description')->nullable(); // catatan tambahan
 
             $table->dateTime('received_at')->nullable(); // kapan diterima

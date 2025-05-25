@@ -16,4 +16,9 @@ class CreateUser extends CreateRecord
         // Set role Admin
         $this->record->syncRoles(['Admin']);
     }
+
+    protected function getRedirectUrl(): string
+    {
+        return $this->getResource()::getUrl('index');
+    }
 }
