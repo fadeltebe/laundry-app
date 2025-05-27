@@ -77,6 +77,11 @@ class TransactionResource extends Resource
                     Forms\Components\TextInput::make('phone')->required(),
                     Forms\Components\TextInput::make('adress'),
                 ])
+                ->createOptionUsing(function (array $data) {
+                    // Pastikan laundry_id diset agar relasinya benar
+                    $data['laundry_id'] = auth()->user()->laundries()->first()?->id;
+                    return Customer::create($data);
+                })
                 ->createOptionAction(
                     fn(\Filament\Forms\Components\Actions\Action $action) =>
                     $action->mutateFormDataUsing(function (array $data) {
@@ -84,6 +89,7 @@ class TransactionResource extends Resource
                         return $data;
                     })
                 ),
+
             Forms\Components\TextInput::make('description')
                 ->label('Catatan')
                 ->maxLength(255),
