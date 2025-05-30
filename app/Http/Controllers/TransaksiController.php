@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Carbon\Carbon;
+use App\Models\Branch;
 use App\Models\Laundry;
 use App\Models\Transaction;
 use Illuminate\Support\Str;
@@ -12,7 +13,6 @@ class TransaksiController extends Controller
 {
     public function index()
     {
-        dd('tes');
         return view('transaksi.index');
     }
 

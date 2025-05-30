@@ -21,8 +21,6 @@ class CreateTransaction extends CreateRecord
 
     protected function getRedirectUrl(): string
     {
-        $recordId = $this->record->id;
-
-        return route('transaksi.print', ['id' => $recordId]);
+        return $this->getResource()::getUrl('index');
     }
 }

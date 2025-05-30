@@ -46,8 +46,8 @@ class TransactionChart extends ChartWidget
             $bulan = \Carbon\Carbon::createFromDate($tahun, $i, 1);
 
             $query = \App\Models\Transaction::query()
-                ->whereYear('created_at', $bulan->year)
-                ->whereMonth('created_at', $bulan->month);
+                ->whereYear('received_at', $bulan->year)
+                ->whereMonth('received_at', $bulan->month);
 
             $user = auth()->user();
             $query->where('laundry_id', $user->laundries->first()?->id);

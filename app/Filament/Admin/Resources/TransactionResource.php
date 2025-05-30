@@ -12,19 +12,23 @@ use Filament\Forms\Form;
 use Filament\Tables\Table;
 use App\Models\Transaction;
 use PhpParser\Node\Stmt\Label;
-use Filament\Tables\Actions\Action;
 use Filament\Resources\Resource;
+use Filament\Tables\Actions\Action;
 use Filament\Forms\Components\Select;
+use Filament\Support\Enums\FontWeight;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\TextInput;
+use Filament\Tables\Actions\ActionGroup;
+use Filament\Tables\Columns\Layout\Split;
+use Filament\Tables\Columns\Layout\Stack;
 use Illuminate\Database\Eloquent\Builder;
+use Filament\Tables\Enums\ActionsPosition;
 use Filament\Forms\Components\ToggleButtons;
 use Filament\Forms\Components\DateTimePicker;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use App\Filament\Admin\Resources\TransactionResource\Pages;
 use Icetalker\FilamentTableRepeater\Forms\Components\TableRepeater;
 use App\Filament\Admin\Resources\TransactionResource\RelationManagers;
-use Filament\Tables\Enums\ActionsPosition;
 
 class TransactionResource extends Resource
 {
@@ -150,7 +154,7 @@ class TransactionResource extends Resource
                 ->default('Belum Lunas')
                 ->required()
                 ->reactive(),
-            TableRepeater::make('transactionServices')
+            Repeater::make('transactionServices')
                 ->label('Layanan Transaksi')
                 ->relationship('transactionServices') // pastikan relasi ini didefinisikan di model Transaction
                 ->schema([
@@ -237,56 +241,51 @@ class TransactionResource extends Resource
     {
         return $table
             ->columns([
-                // Tables\Columns\TextColumn::make('laundry.name')
-                //     ->numeric()
-                //     ->sortable(),
-                // Tables\Columns\TextColumn::make('branch.name')
-                //     ->numeric()
-                //     ->sortable(),
-                Tables\Columns\TextColumn::make('customer.name')
-                    ->numeric()
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('description')
-                    ->searchable(),
-                Tables\Columns\TextColumn::make('received_at')
-                    ->dateTime()
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('completed_at')
-                    ->dateTime()
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('status'),
-                Tables\Columns\TextColumn::make('amount')
-                    ->numeric()
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('payment_method')
-                    ->searchable(),
-                Tables\Columns\TextColumn::make('paid_at')
-                    ->dateTime()
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('payment_status'),
-                Tables\Columns\TextColumn::make('created_at')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
-                Tables\Columns\TextColumn::make('updated_at')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
+                Split::make([
+                    Stack::make([
+                        Tables\Columns\TextColumn::make('customer.name'),
+                        Tables\Columns\TextColumn::make('kode')->weight(FontWeight::Bold),
+                    ]),
+                    Stack::make([
+                        Tables\Columns\TextColumn::make('received_at')
+                            ->dateTime()
+                            ->sortable(),
+                        Tables\Columns\TextColumn::make('status'),
+
+                    ]),
+                    Stack::make([
+
+                        Tables\Columns\TextColumn::make('amount')
+                            ->numeric()
+                            ->sortable(),
+                        Tables\Columns\TextColumn::make('payment_status'),
+                    ]),
+
+                ])
             ])
+            ->poll('10s')
             ->filters([
                 //
             ])
             ->actions(
                 [
-                    Tables\Actions\EditAction::make(),
-                    Action::make('kirimWhatsApp')
-                        ->label('Kirim WA')
-                        ->url(fn($record) => route('transaksi.kirim-wa', $record))
-                        ->icon('heroicon-o-chat-bubble-oval-left-ellipsis')
-                        ->color('success')
-                        ->openUrlInNewTab()
+                    ActionGroup::make([
+                        Tables\Actions\EditAction::make()->color('primary'),
+                        // Tables\Actions\ViewAction::make(),
+                        Action::make('printBluetooth')
+                            ->label('Cetak')
+                            ->url(fn($record) => route('transaksi.print', $record))
+                            ->icon('heroicon-o-printer')->color('danger'),
+                        Action::make('kirimWhatsApp')
+                            ->label('Kirim WA')
+                            ->url(fn($record) => route('transaksi.kirim-wa', $record))
+                            ->icon('heroicon-o-chat-bubble-oval-left-ellipsis')
+                            ->color('success')
+                            ->openUrlInNewTab()
+                    ])->icon('heroicon-c-squares-2x2')
                 ],
                 position: ActionsPosition::BeforeColumns
+
             )
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
@@ -307,7 +306,7 @@ class TransactionResource extends Resource
         return [
             'index' => Pages\ListTransactions::route('/'),
             'create' => Pages\CreateTransaction::route('/create'),
-            'edit' => Pages\EditTransaction::route('/{record}/edit'),
+            // 'edit' => Pages\EditTransaction::route('/{record}/edit'),
         ];
     }
 

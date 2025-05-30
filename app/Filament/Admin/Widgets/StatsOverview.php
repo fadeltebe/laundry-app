@@ -3,8 +3,8 @@
 namespace App\Filament\Admin\Widgets;
 
 use Carbon\Carbon;
-use App\Models\Transaction;
 use App\Models\Branch;
+use App\Models\Transaction;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\DatePicker;
 use Filament\Widgets\Concerns\InteractsWithPageFilters;
@@ -13,76 +13,79 @@ use Filament\Widgets\StatsOverviewWidget\Stat;
 
 class StatsOverview extends BaseWidget
 {
-
     use InteractsWithPageFilters;
 
     protected function getStats(): array
     {
-        $query = Transaction::query();
         $user = auth()->user();
-        $query->where('laundry_id', $user->laundries->first()?->id);
+        $baseQuery = Transaction::with('transactionServices.service')
+            ->where('laundry_id', $user->laundries->first()?->id);
 
-
-
-        // 🔒 Filter cabang jika user adalah admin
+        // 🔐 Filter untuk Admin
         if (is_admin()) {
-            $query->where('branch_id', $user->branches()->first()?->id);
+            $baseQuery->where('branch_id', $user->branches()->first()?->id);
         }
 
-        // 📅 Filter tanggal
+        // 📅 Filter berdasarkan tanggal
         $startDate = $this->filters['start_date'] ?? null;
         $endDate = $this->filters['end_date'] ?? null;
 
         if ($startDate && $endDate) {
-            $query->whereBetween('created_at', [
+            $baseQuery->whereBetween('received_at', [
                 Carbon::parse($startDate)->startOfDay(),
-                Carbon::parse($endDate)->endOfDay(),
+                Carbon::parse($endDate)->endOfDay()
             ]);
         } elseif ($startDate) {
-            $query->where('created_at', '>=', Carbon::parse($startDate)->startOfDay());
+            $baseQuery->where('received_at', '>=', Carbon::parse($startDate)->startOfDay());
         } elseif ($endDate) {
-            $query->where('created_at', '<=', Carbon::parse($endDate)->endOfDay());
+            $baseQuery->where('received_at', '<=', Carbon::parse($endDate)->endOfDay());
         }
 
-        // 🏢 Filter berdasarkan cabang dari filter halaman
+        // 🏢 Filter cabang dari filter halaman
         if ($branchId = $this->filters['branch_id'] ?? null) {
-            $query->where('branch_id', $branchId);
+            $baseQuery->where('branch_id', $branchId);
         }
+
+        // Salin query untuk tiap range waktu
+        $today = now()->toDateString();
+        $month = now()->month;
+        $year = now()->year;
+
+        // 💡 Hari Ini
+        $todayQuery = (clone $baseQuery)->whereDate('received_at', $today)->get();
+        $todayAmount = $todayQuery->sum('amount');
+        $todayCount = $todayQuery->count();
+        $todayBerat = $todayQuery->flatMap->transactionServices->sum('weight');
+        $todayLayanan = $todayQuery->flatMap->transactionServices->pluck('service_id')->unique()->count();
+
+        // 💡 Bulan Ini
+        $monthQuery = (clone $baseQuery)
+            ->whereMonth('received_at', $month)
+            ->whereYear('received_at', $year)
+            ->get();
+        $monthAmount = $monthQuery->sum('amount');
+        $monthCount = $monthQuery->count();
+        $monthBerat = $monthQuery->flatMap->transactionServices->sum('weight');
+        $monthLayanan = $monthQuery->flatMap->transactionServices->pluck('service_id')->unique()->count();
+
+        // 💡 Total Keseluruhan (tanpa filter tanggal)
+        $totalQuery = (clone $baseQuery)->get();
+        $totalAmount = $totalQuery->sum('amount');
+        $totalCount = $totalQuery->count();
+        $totalBerat = $totalQuery->flatMap->transactionServices->sum('weight');
+        $totalLayanan = $totalQuery->flatMap->transactionServices->pluck('service_id')->unique()->count();
 
         return [
-            Stat::make('Total Hari Ini', number_format(
-                (clone $query)->whereDate('created_at', now())->sum('amount'),
-                0,
-                ',',
-                '.'
-            ))
-                ->description('Jumlah transaksi hari ini: ' . (clone $query)->whereDate('created_at', now())->count())
+            Stat::make('Hari Ini', 'Rp ' . number_format($todayAmount, 0, ',', '.'))
+                ->description("Transaksi: $todayCount | Berat: {$todayBerat}kg | Layanan: $todayLayanan")
                 ->color('success'),
 
-            Stat::make('Total Bulan Ini', number_format(
-                (clone $query)
-                    ->whereMonth('created_at', now()->month)
-                    ->whereYear('created_at', now()->year)
-                    ->sum('amount'),
-                0,
-                ',',
-                '.'
-            ))
-                ->description(
-                    'Jumlah transaksi bulan ini: ' . (clone $query)
-                        ->whereMonth('created_at', now()->month)
-                        ->whereYear('created_at', now()->year)
-                        ->count()
-                )
+            Stat::make('Bulan Ini', 'Rp ' . number_format($monthAmount, 0, ',', '.'))
+                ->description("Transaksi: $monthCount | Berat: {$monthBerat}kg | Layanan: $monthLayanan")
                 ->color('info'),
 
-            Stat::make('Total Keseluruhan', number_format(
-                (clone $query)->sum('amount'),
-                0,
-                ',',
-                '.'
-            ))
-                ->description('Jumlah seluruh transaksi: ' . (clone $query)->count())
+            Stat::make('Keseluruhan', 'Rp ' . number_format($totalAmount, 0, ',', '.'))
+                ->description("Transaksi: $totalCount | Berat: {$totalBerat}kg | Layanan: $totalLayanan")
                 ->color('primary'),
         ];
     }
