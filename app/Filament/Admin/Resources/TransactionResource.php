@@ -17,6 +17,7 @@ use Filament\Tables\Actions\Action;
 use Filament\Forms\Components\Select;
 use Filament\Support\Enums\FontWeight;
 use Filament\Forms\Components\Repeater;
+use Filament\Tables\Columns\TextColumn;
 use Filament\Forms\Components\TextInput;
 use Filament\Tables\Actions\ActionGroup;
 use Filament\Tables\Columns\Layout\Split;
@@ -150,7 +151,7 @@ class TransactionResource extends Resource
                     'Belum Lunas' => 'danger',
                 ])
                 ->inline()
-                ->disabled() // Agar tidak bisa diubah manual
+                // ->disabled() // Agar tidak bisa diubah manual
                 ->default('Belum Lunas')
                 ->required()
                 ->reactive(),
@@ -244,23 +245,54 @@ class TransactionResource extends Resource
                 Split::make([
                     Stack::make([
                         Tables\Columns\TextColumn::make('customer.name'),
-                        Tables\Columns\TextColumn::make('kode')->weight(FontWeight::Bold),
-                    ]),
-                    Stack::make([
+                        Tables\Columns\TextColumn::make('kode'),
                         Tables\Columns\TextColumn::make('received_at')
                             ->dateTime()
                             ->sortable(),
-                        Tables\Columns\TextColumn::make('status'),
-
                     ]),
                     Stack::make([
-
-                        Tables\Columns\TextColumn::make('amount')
+                        TextColumn::make('amount')
+                            ->label('Total Bayar')
+                            ->size('xl')
                             ->numeric()
-                            ->sortable(),
-                        Tables\Columns\TextColumn::make('payment_status'),
-                    ]),
+                            ->weight(FontWeight::Bold)
+                            ->sortable()
+                            ->color(fn($record) => match ($record->payment_status) {
+                                'Lunas' => 'success',
+                                'Belum Lunas' => 'danger',
+                                default => 'gray',
+                            }),
+                        Tables\Columns\TextColumn::make('payment_status')
+                            ->label('Pembayaran')
+                            ->badge()
+                            ->formatStateUsing(fn(string $state) => ucfirst($state))
+                            ->colors([
+                                'success' => 'Lunas',
+                                'danger' => 'Belum Lunas',
+                            ])
+                            ->icon(fn(string $state): string => match ($state) {
+                                'Lunas' => 'heroicon-o-check-circle',
+                                'Belum Lunas' => 'heroicon-o-x-circle',
+                                default => 'heroicon-o-question-mark-circle',
+                            })
+                            ->iconColor(fn(string $state): string => match ($state) {
+                                'Lunas' => 'success',
+                                'Belum Lunas' => 'danger',
+                                default => 'gray',
+                            }),
+                        Tables\Columns\TextColumn::make('status')
+                            ->label('Status Pesanan')
+                            ->badge()
+                            ->formatStateUsing(fn(string $state) => ucfirst($state))
+                            ->color(fn(string $state): string => match ($state) {
+                                'Diterima' => 'gray',
+                                'Diproses' => 'warning',
+                                'Selesai' => 'success',
+                                'Diambil' => 'primary',
+                                default => 'secondary',
+                            }),
 
+                    ]),
                 ])
             ])
             ->poll('10s')
